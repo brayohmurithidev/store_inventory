@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.1
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=$DB_ROOT_PASSWORD
+      - MYSQL_DB=$DB_NAME
+    ports:
+      - $DB_LOCAL_PORT:$DB_DOCKER_PORT
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - backend
+
+
+  api:
+    depends_on:
+      - db
+    build: ./api
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+      - $NODE_LOCAL_PORT:$NODE_DOCKER_PORT
+    environment:
+      - DB_HOST=db
+      - DB_USER=$MYSQL_DB_USER
+      - DB_PASSWORD=$MYSQL_DB_PASSWORD
+      - DB_NAME=$MYSQL_DB_NAME
+      - DB_PORT=$MYSQL_DOCKER_PORT
+    networks:
+      - backend
+      - frontend
+  
+
+  client:
+    depends_on:
+      - api
+    build:
+      context: ./client
+      args:
+        - REACT_APP_API_BASE_URL=$CLIENT_API_BASE_URL
+    ports:
+      - $REACT_LOCAL_PORT:$REACT_DOCKER_PORT
+    networks:
+      - frontend
+    
+volumes:
+  db:
+
+networks:
+  backend:
+  frontend:
+     
